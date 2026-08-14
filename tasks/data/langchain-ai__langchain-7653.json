@@ -1,0 +1,22 @@
+{
+  "instance_id": "langchain-ai__langchain-7653",
+  "repo": "langchain-ai/langchain",
+  "base_commit": "a673a51efa3e03aaa7c8c7e0004dc5ff9c536f2e",
+  "problem_statement": "SQLite LLM cache clear does not take effect\n### System Info\n\nLangchain version: 0.0.231\r\nPython version: 3.10.11\r\n\r\nBug:\r\n\r\nThere is an issue when clearing LLM cache for SQL Alchemy based caches.\r\nlangchain.llm_cache.clear() does not clear the cache for SQLite LLM cache. \r\n\r\nReason: it doesn't commit the deletion database change. The deletion doesn't take effect.\n\n### Who can help?\n\n@hwchase17 @ag\n\n### Information\n\n- [ ] The official example notebooks/scripts\n- [ ] My own modified scripts\n\n### Related Components\n\n- [X] LLMs/Chat Models\n- [ ] Embedding Models\n- [ ] Prompts / Prompt Templates / Prompt Selectors\n- [ ] Output Parsers\n- [ ] Document Loaders\n- [ ] Vector Stores / Retrievers\n- [ ] Memory\n- [ ] Agents / Agent Executors\n- [ ] Tools / Toolkits\n- [ ] Chains\n- [ ] Callbacks/Tracing\n- [ ] Async\n\n### Reproduction\n\n- Configure SQLite LLM Cache\r\n- Call an LLM via langchain\r\n- The SQLite database get's populated with an entry\r\n- call langchain.llm_cache.clear()\r\n\r\n- Actual Behaviour: Notice that the entry is still in SQLite\r\n\n\n### Expected behavior\n\n- Expected Behaviour: The cache database table should be empty\n",
+  "test_patch": "diff --git a/tests/unit_tests/test_cache.py b/tests/unit_tests/test_cache.py\n--- a/tests/unit_tests/test_cache.py\n+++ b/tests/unit_tests/test_cache.py\n@@ -139,6 +139,26 @@ def test_chat_model_caching_params() -> None:\n         )\n \n \n+def test_llm_cache_clear() -> None:\n+    prompt = \"How are you?\"\n+    response = \"Test response\"\n+    cached_response = \"Cached test response\"\n+    llm = FakeListLLM(responses=[response])\n+    if langchain.llm_cache:\n+        langchain.llm_cache.update(\n+            prompt=prompt,\n+            llm_string=create_llm_string(llm),\n+            return_val=[Generation(text=cached_response)],\n+        )\n+        langchain.llm_cache.clear()\n+        assert llm(prompt) == response\n+    else:\n+        raise ValueError(\n+            \"The cache not set. This should never happen, as the pytest fixture \"\n+            \"`set_cache_and_teardown` always sets the cache.\"\n+        )\n+\n+\n def create_llm_string(llm: Union[BaseLLM, BaseChatModel]) -> str:\n     _dict: Dict = llm.dict()\n     _dict[\"stop\"] = None\n",
+  "language": "Python",
+  "task_category": "Bug Fix",
+  "num_nodes": 1,
+  "num_func_changes": 1,
+  "num_class_changes": 0,
+  "is_single_func": true,
+  "is_single_class": false,
+  "is_mixed": false,
+  "is_func_only": true,
+  "is_class_only": false,
+  "is_no_nodes": false,
+  "patch": "diff --git a/langchain/cache.py b/langchain/cache.py\n--- a/langchain/cache.py\n+++ b/langchain/cache.py\n@@ -180,6 +180,7 @@ def clear(self, **kwargs: Any) -> None:\n         \"\"\"Clear cache.\"\"\"\n         with Session(self.engine) as session:\n             session.query(self.cache_schema).delete()\n+            session.commit()\n \n \n class SQLiteCache(SQLAlchemyCache):\n",
+  "F2P": "['tests/unit_tests/test_cache.py:None:test_llm_cache_clear[get_sqlite_cache]']",
+  "P2P": "['tests/unit_tests/test_cache.py:None:test_chat_model_caching_params[InMemoryCache]', 'tests/unit_tests/test_cache.py:None:test_old_sqlite_llm_caching[InMemoryCache]', 'tests/unit_tests/test_cache.py:None:test_chat_model_caching[get_sqlite_cache]', 'tests/unit_tests/test_cache.py:None:test_chat_model_caching_params[get_sqlite_cache]', 'tests/unit_tests/test_cache.py:None:test_llm_caching[InMemoryCache]', 'tests/unit_tests/test_cache.py:None:test_llm_cache_clear[InMemoryCache]', 'tests/unit_tests/test_cache.py:None:test_old_sqlite_llm_caching[get_sqlite_cache]', 'tests/unit_tests/test_cache.py:None:test_llm_caching[get_sqlite_cache]', 'tests/unit_tests/test_cache.py:None:test_chat_model_caching[InMemoryCache]']",
+  "test_command": "pytest /testbed/tests/unit_tests/test_cache.py -v --capture=no --junitxml=test-results.xml"
+}

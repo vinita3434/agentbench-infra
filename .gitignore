@@ -1,6 +1,9 @@
-# Fetched task data and run outputs are reproducible; don't commit them.
-tasks/data/
-tasks/manifest.jsonl
+# Run outputs are reproducible; don't commit them.
+#
+# tasks/data/ and manifest.jsonl ARE committed: the task set is the frozen
+# experimental control. Regenerating it re-probes GHCR and re-selects, which
+# could silently pick different tasks and break comparability with the
+# baseline. It travels with the code so a pod gets it from `git pull`.
 results/**/pi_log.jsonl
 results/**/pi_stderr.log
 results/**/candidate.patch

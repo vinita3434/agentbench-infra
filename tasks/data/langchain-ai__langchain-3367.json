@@ -1,0 +1,22 @@
+{
+  "instance_id": "langchain-ai__langchain-3367",
+  "repo": "langchain-ai/langchain",
+  "base_commit": "3a1bdce3f51e302d468807e980455d676c0f5fd6",
+  "problem_statement": "Terminal tool gives `ValueError: Could not parse LLM output:` when there is a new libe before action string.\nWhile playing with the LLaMA models I noticed what parse exception was thrown even output looked good.\r\n\r\n### Screenshot\r\n![Screenshot_20230422_220902](https://user-images.githubusercontent.com/10456471/233808267-0f6f872a-f7b4-4154-b38c-ad2dcade7820.png)\r\n\r\nFor curious one the prompt I used was:\r\n```python\r\nagent({\"input\":\"\"\"\r\nThere is a file in `~/.bashrc.d/` directory containing openai api key.\r\nCan you find that key?\r\n\"\"\"})\r\n```\r\n\n",
+  "test_patch": "diff --git a/tests/unit_tests/agents/test_mrkl.py b/tests/unit_tests/agents/test_mrkl.py\n--- a/tests/unit_tests/agents/test_mrkl.py\n+++ b/tests/unit_tests/agents/test_mrkl.py\n@@ -50,6 +50,27 @@ def test_get_action_and_input_newline() -> None:\n     assert action_input == \"```\\nimport unittest\\n\\nunittest.main()\\n```\"\n \n \n+def test_get_action_and_input_newline_after_keyword() -> None:\n+    \"\"\"Test getting an action and action input from the text\n+    when there is a new line before the action\n+    (after the keywords \"Action:\" and \"Action Input:\")\n+    \"\"\"\n+    llm_output = \"\"\"\n+    I can use the `ls` command to list the contents of the directory \\\n+    and `grep` to search for the specific file.\n+\n+    Action:\n+    Terminal\n+\n+    Action Input:\n+    ls -l ~/.bashrc.d/\n+    \"\"\"\n+\n+    action, action_input = get_action_and_input(llm_output)\n+    assert action == \"Terminal\"\n+    assert action_input == \"ls -l ~/.bashrc.d/\\n\"\n+\n+\n def test_get_final_answer() -> None:\n     \"\"\"Test getting final answer.\"\"\"\n     llm_output = (\n",
+  "language": "Python",
+  "task_category": "Bug Fix",
+  "num_nodes": 1,
+  "num_func_changes": 1,
+  "num_class_changes": 0,
+  "is_single_func": true,
+  "is_single_class": false,
+  "is_mixed": false,
+  "is_func_only": true,
+  "is_class_only": false,
+  "is_no_nodes": false,
+  "patch": "diff --git a/langchain/agents/mrkl/output_parser.py b/langchain/agents/mrkl/output_parser.py\n--- a/langchain/agents/mrkl/output_parser.py\n+++ b/langchain/agents/mrkl/output_parser.py\n@@ -18,7 +18,9 @@ def parse(self, text: str) -> Union[AgentAction, AgentFinish]:\n                 {\"output\": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text\n             )\n         # \\s matches against tab/newline/whitespace\n-        regex = r\"Action\\s*\\d*\\s*:(.*?)\\nAction\\s*\\d*\\s*Input\\s*\\d*\\s*:[\\s]*(.*)\"\n+        regex = (\n+            r\"Action\\s*\\d*\\s*:[\\s]*(.*?)[\\s]*Action\\s*\\d*\\s*Input\\s*\\d*\\s*:[\\s]*(.*)\"\n+        )\n         match = re.search(regex, text, re.DOTALL)\n         if not match:\n             raise OutputParserException(f\"Could not parse LLM output: `{text}`\")\n",
+  "F2P": "['tests/unit_tests/agents/test_mrkl.py:None:test_get_action_and_input_newline_after_keyword']",
+  "P2P": "['tests/unit_tests/agents/test_mrkl.py:None:test_get_final_answer_multiline', 'tests/unit_tests/agents/test_mrkl.py:None:test_bad_action_input_line', 'tests/unit_tests/agents/test_mrkl.py:None:test_get_action_and_input', 'tests/unit_tests/agents/test_mrkl.py:None:test_get_action_and_input_newline', 'tests/unit_tests/agents/test_mrkl.py:None:test_get_final_answer_new_line', 'tests/unit_tests/agents/test_mrkl.py:None:test_get_final_answer', 'tests/unit_tests/agents/test_mrkl.py:None:test_from_chains', 'tests/unit_tests/agents/test_mrkl.py:None:test_get_action_and_input_whitespace', 'tests/unit_tests/agents/test_mrkl.py:None:test_bad_action_line']",
+  "test_command": "poetry run pytest /testbed/tests/unit_tests/agents/test_mrkl.py -v --junitxml=test-results.xml"
+}

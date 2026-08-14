@@ -1,0 +1,22 @@
+{
+  "instance_id": "langchain-ai__langchain-4420",
+  "repo": "langchain-ai/langchain",
+  "base_commit": "f2150285a495fc530a7707218ea4980c17a170e5",
+  "problem_statement": "WhatsAppChatLoader doesn't work on chats exported from WhatsApp\n### System Info\n\nlangchain               0.0.158\r\nMac OS M1\r\nPython 3.11\n\n### Who can help?\n\n@ey\n\n### Information\n\n- [X] The official example notebooks/scripts\n- [ ] My own modified scripts\n\n### Related Components\n\n- [ ] LLMs/Chat Models\n- [ ] Embedding Models\n- [ ] Prompts / Prompt Templates / Prompt Selectors\n- [ ] Output Parsers\n- [X] Document Loaders\n- [ ] Vector Stores / Retrievers\n- [ ] Memory\n- [ ] Agents / Agent Executors\n- [ ] Tools / Toolkits\n- [ ] Chains\n- [ ] Callbacks/Tracing\n- [ ] Async\n\n### Reproduction\n\n1. Use 'Export Chat' feature on WhatsApp.\r\n2. Observe this format for the txt file\r\n```\r\n[11/8/21, 9:41:32 AM] User name: Message text\r\n```\r\n\r\nThe regular expression used by WhatsAppChatLoader doesn't parse this format successfully\n\n### Expected behavior\n\nParsing fails\n",
+  "test_patch": "diff --git a/tests/integration_tests/document_loaders/test_whatsapp_chat.py b/tests/integration_tests/document_loaders/test_whatsapp_chat.py\n--- a/tests/integration_tests/document_loaders/test_whatsapp_chat.py\n+++ b/tests/integration_tests/document_loaders/test_whatsapp_chat.py\n@@ -16,4 +16,5 @@ def test_whatsapp_chat_loader() -> None:\n         \"User name on 11/8/21, 9:41:32 AM: Message 123\\n\\n\"\n         \"User 2 on 1/23/23, 3:19 AM: Bye!\\n\\n\"\n         \"User 1 on 1/23/23, 3:22_AM: And let me know if anything changes\\n\\n\"\n+        \"~ User name 2 on 1/24/21, 12:41:03 PM: Of course!\\n\\n\"\n     )\ndiff --git a/tests/integration_tests/examples/whatsapp_chat.txt b/tests/integration_tests/examples/whatsapp_chat.txt\n--- a/tests/integration_tests/examples/whatsapp_chat.txt\n+++ b/tests/integration_tests/examples/whatsapp_chat.txt\n@@ -1,4 +1,5 @@\n [05.05.23, 15:48:11] James: Hi here\n [11/8/21, 9:41:32 AM] User name: Message 123\n 1/23/23, 3:19 AM - User 2: Bye!\n-1/23/23, 3:22_AM - User 1: And let me know if anything changes\n\\ No newline at end of file\n+1/23/23, 3:22_AM - User 1: And let me know if anything changes\n+[1/24/21, 12:41:03 PM] ~ User name 2: Of course!\n\\ No newline at end of file\n",
+  "language": "Python",
+  "task_category": "Bug Fix",
+  "num_nodes": 1,
+  "num_func_changes": 1,
+  "num_class_changes": 0,
+  "is_single_func": true,
+  "is_single_class": false,
+  "is_mixed": false,
+  "is_func_only": true,
+  "is_class_only": false,
+  "is_no_nodes": false,
+  "patch": "diff --git a/langchain/document_loaders/whatsapp_chat.py b/langchain/document_loaders/whatsapp_chat.py\n--- a/langchain/document_loaders/whatsapp_chat.py\n+++ b/langchain/document_loaders/whatsapp_chat.py\n@@ -44,7 +44,7 @@ def load(self) -> List[Document]:\n             )\n             \\]?\n             [\\s-]*\n-            ([\\w\\s]+)\n+            ([~\\w\\s]+)\n             [:]+\n             \\s\n             (.+)\n",
+  "F2P": "['tests/integration_tests/document_loaders/test_whatsapp_chat.py:None:test_whatsapp_chat_loader']",
+  "P2P": "[]",
+  "test_command": "pytest /testbed/tests/integration_tests/document_loaders/test_whatsapp_chat.py -v --json-report"
+}

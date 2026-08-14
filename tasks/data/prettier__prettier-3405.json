@@ -1,0 +1,22 @@
+{
+  "instance_id": "prettier__prettier-3405",
+  "repo": "prettier/prettier",
+  "base_commit": "e09359d2428bdac40c30cd6a82c92a627d1e1d05",
+  "problem_statement": "1.9: Trailing comma not adding in code blocks in markdown\n**Prettier 1.9.0**\r\n[Playground link](https://prettier.io/playground/#N4Igxg9gdgLgprEAuEBidACAyhAtnDACzgEMATASygHMAdKegA2YCsBnetvOAMQFcoYGBWgBhEgBsJACnoYMAMwgQANHIwAjEgCc1UeUohbd6rvniEq1AEqkpATwAy0agEEoZABIkK2+3vkzOBhLGgBRCTY4AM1tUgBrADkIAHd6AEoAbiZmehAVEAgAB2FoNmRQHW1UgAUdBHKUEgA3CAoyfJASNhhkBUkogo1tEjB44Kwi0atkGG0+aJAyCDA+gcWqKO0YGpHqXBI1yMX2AA8AIRGxiZJ8Ryo4I8HCvhgi14AmJ8Wp7S3kEAHbTxZYpKCdIraKgwADq7RCyAAHAAGAqQiBRGEjIoAyFwLbNR4FOIARz4vjguxI+0OSH6xwKUVwFFm80WbCsEjgAEU+BB4N8CjASBo4WQEUgPkKRhQJFZRHgDgDJBJOnwogAVEWNelRAC+eqAA)\r\n```sh\r\n--parser markdown\r\n--trailing-comma all\r\n```\r\n\r\n**Input:**\r\n````markdown\r\n### Some heading\r\n\r\n```js\r\nsomeFunctionCall(\r\n  foo,\r\n  bar,\r\n  foobar,\r\n  sometehingReallyLongAndHairy,\r\n  somethingElse,\r\n  breakNow,\r\n);\r\n```\r\n\r\n````\r\n\r\n**Output:**\r\n````markdown\r\n### Some heading\r\n\r\n```js\r\nsomeFunctionCall(\r\n  foo,\r\n  bar,\r\n  foobar,\r\n  sometehingReallyLongAndHairy,\r\n  somethingElse,\r\n  breakNow\r\n);\r\n```\r\n\r\n````\r\n\r\n**Expected behavior:**\r\n\r\nSame as 1.8.2, namely adding trailing comma\n",
+  "test_patch": "diff --git a/tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap b/tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap\nnew file mode 100644\nindex 000000000000..4c94e48eeed8\n--- /dev/null\n+++ b/tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap\n@@ -0,0 +1,30 @@\n+// Jest Snapshot v1, https://goo.gl/fbAQLP\n+\n+exports[`trailing-comma.md 1`] = `\n+### Some heading\n+\n+\\`\\`\\`js\n+someFunctionCall(\n+  foo,\n+  bar,\n+  foobar,\n+  sometehingReallyLongAndHairy,\n+  somethingElse,\n+  breakNow,\n+);\n+\\`\\`\\`\n+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n+### Some heading\n+\n+\\`\\`\\`js\n+someFunctionCall(\n+  foo,\n+  bar,\n+  foobar,\n+  sometehingReallyLongAndHairy,\n+  somethingElse,\n+  breakNow,\n+);\n+\\`\\`\\`\n+\n+`;\ndiff --git a/tests/multiparser_markdown_js/jsfmt.spec.js b/tests/multiparser_markdown_js/jsfmt.spec.js\nnew file mode 100644\nindex 000000000000..6fafe58eacd6\n--- /dev/null\n+++ b/tests/multiparser_markdown_js/jsfmt.spec.js\n@@ -0,0 +1,1 @@\n+run_spec(__dirname, [\"markdown\"], { trailingComma: \"all\" });\ndiff --git a/tests/multiparser_markdown_js/trailing-comma.md b/tests/multiparser_markdown_js/trailing-comma.md\nnew file mode 100644\nindex 000000000000..8ea8ca7a9b3d\n--- /dev/null\n+++ b/tests/multiparser_markdown_js/trailing-comma.md\n@@ -0,0 +1,12 @@\n+### Some heading\n+\n+```js\n+someFunctionCall(\n+  foo,\n+  bar,\n+  foobar,\n+  sometehingReallyLongAndHairy,\n+  somethingElse,\n+  breakNow,\n+);\n+```\n",
+  "language": "JavaScript",
+  "task_category": "Bug Fix",
+  "num_nodes": 1,
+  "num_func_changes": 1,
+  "num_class_changes": 0,
+  "is_single_func": true,
+  "is_single_class": false,
+  "is_mixed": false,
+  "is_func_only": true,
+  "is_class_only": false,
+  "is_no_nodes": false,
+  "patch": "diff --git a/src/multiparser.js b/src/multiparser.js\nindex 70a770cbb234..7476186a7261 100644\n--- a/src/multiparser.js\n+++ b/src/multiparser.js\n@@ -26,12 +26,11 @@ function printSubtree(path, print, options) {\n function parseAndPrint(text, partialNextOptions, parentOptions) {\n   const nextOptions = Object.assign({}, parentOptions, partialNextOptions, {\n     parentParser: parentOptions.parser,\n-    trailingComma:\n-      partialNextOptions.parser === \"json\"\n-        ? \"none\"\n-        : partialNextOptions.trailingComma,\n     originalText: text\n   });\n+  if (nextOptions.parser === \"json\") {\n+    nextOptions.trailingComma = \"none\";\n+  }\n   const ast = require(\"./parser\").parse(text, nextOptions);\n   const astComments = ast.comments;\n   delete ast.comments;\n",
+  "F2P": "['/testbed/tests/multiparser_markdown_js/jsfmt.spec.js->trailing-comma.md - markdown-verify']",
+  "P2P": "[]",
+  "test_command": ". /usr/local/nvm/nvm.sh && nvm use 20.16.0 && npm pkg set scripts.lint=\"echo noop\" && yarn test tests/multiparser_markdown_js/__snapshots__/jsfmt.spec.js.snap tests/multiparser_markdown_js/trailing-comma.md tests/multiparser_markdown_js/jsfmt.spec.js --json"
+}
