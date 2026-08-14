@@ -1,0 +1,47 @@
+# Dockerfile.test -- Mode A (Mac) ONLY.
+#
+# Runs the Pi coding agent inside an x86 container that calls a frontier model
+# via OpenRouter over the internet. Used to validate the harness before spending
+# GPU money. NOT used on RunPod (Mode B is native, no Docker).
+#
+# Apple Silicon note: force x86 so the toolchain matches the eventual pod.
+#   docker build --platform linux/amd64 -f Dockerfile.test \
+#     --build-arg TASK_REPO_URL=https://github.com/<owner>/<repo>.git \
+#     -t agent-serving-bench:test .
+#
+# Base on node:22 because Pi requires Node >= 22.19 and installs as the npm
+# package @earendil-works/pi-coding-agent. The public installer
+# (curl https://pi.dev/install.sh | sh) is INTERACTIVE (reads /dev/tty) and is
+# meant for a human shell; in a non-interactive build we install the exact same
+# npm package it would install. Python + git are added for the harness loop.
+FROM --platform=linux/amd64 node:22-bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git python3 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Install Pi (coding agent), pinnable via build arg --------------------
+ARG PI_VERSION=latest
+RUN npm install -g "@earendil-works/pi-coding-agent@${PI_VERSION}"
+RUN pi --version || (echo "pi not found on PATH after install" && exit 1)
+
+# --- Pi provider config (OpenRouter). Separate from harness config. ------
+RUN mkdir -p /root/.pi/agent
+COPY run/pi_config/models.openrouter.json /root/.pi/agent/models.json
+
+# --- Harness scripts (tasks/ and results/ are mounted at run time) -------
+WORKDIR /agent
+COPY run /agent/run
+
+# --- Bake in the task repo (one image per repo for Mode A) ---------------
+ARG TASK_REPO_URL
+RUN test -n "$TASK_REPO_URL" || (echo "build arg TASK_REPO_URL is required" && exit 1)
+RUN git clone "$TASK_REPO_URL" /repo
+
+# git identity so reset/clean/diff work non-interactively
+RUN git config --global user.email "bench@local" \
+    && git config --global user.name "agent-serving-bench" \
+    && git config --global --add safe.directory /repo
+
+CMD ["bash"]

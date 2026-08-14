@@ -1,0 +1,77 @@
+# Benchmark-ready SWE-PolyBench tasks
+#
+# Every task here was *scored* by run/verify_task.sh: the eval image
+# exists, the patch applies, and the F2P/P2P tests parse. That is what
+# makes it safe to run against open-weight models on any serving stack --
+# a 0 is then a model result, not a harness failure. Tasks that could not
+# be scored at all (ERROR) are deliberately absent.
+#
+# Two sections, and you want both. SOLVED items confirm a model can do the
+# work; UNSOLVED items are ones a frontier model failed *with the verifier
+# working correctly*, so they still discriminate at the top of the range.
+# A set of only-solved tasks has a ceiling: every decent model scores the
+# same and the benchmark stops telling you anything.
+#
+# Re-run one (Mode B, SGLang on :30000):
+#   MODEL=local-model PROVIDER=selfhosted \
+#     run/run_task.sh --task <id> --mode native --workdir <checkout>
+#   MODEL=local-model run/verify_task.sh --task <id>
+#
+# regenerated 2026-08-13 13:15 by run/status.sh --save -- do not hand-edit
+# 10 solved + 2 unsolved = 12 benchmark-ready
+
+# ==== SOLVED by a frontier model (10) ====
+# Known achievable. An open-weight model failing these is a real gap.
+
+langchain-ai__langchain-4646
+    repo=langchain-ai/langchain  lang=Python  framework=pytest  result_source=pytest-json-report
+    f2p=1  p2p=1  solved_by=anthropic/claude-opus-4.8  turns=6  wall=24s
+
+langchain-ai__langchain-6765
+    repo=langchain-ai/langchain  lang=Python  framework=pytest  result_source=pytest-json-report
+    f2p=1  p2p=0  solved_by=anthropic/claude-opus-4.8  turns=3  wall=11s
+
+langchain-ai__langchain-7653
+    repo=langchain-ai/langchain  lang=Python  framework=pytest  result_source=junit
+    f2p=1  p2p=9  solved_by=anthropic/claude-opus-4.8  turns=4  wall=16s
+
+prettier__prettier-12930
+    repo=prettier/prettier  lang=JavaScript  framework=npm-script  result_source=jest
+    f2p=1  p2p=5  solved_by=anthropic/claude-opus-4.8  turns=32  wall=203s
+
+prettier__prettier-3382
+    repo=prettier/prettier  lang=JavaScript  framework=npm-script  result_source=jest
+    f2p=1  p2p=1  solved_by=anthropic/claude-opus-4.8  turns=52  wall=330s
+
+prettier__prettier-3405
+    repo=prettier/prettier  lang=JavaScript  framework=npm-script  result_source=jest
+    f2p=1  p2p=0  solved_by=anthropic/claude-opus-4.8  turns=8  wall=52s
+
+serverless__serverless-4794
+    repo=serverless/serverless  lang=JavaScript  framework=mocha  result_source=mocha
+    f2p=1  p2p=81  solved_by=anthropic/claude-opus-4.8  turns=12  wall=69s
+
+sveltejs__svelte-1310
+    repo=sveltejs/svelte  lang=JavaScript  framework=npm-script  result_source=mocha
+    f2p=1  p2p=1754  solved_by=anthropic/claude-opus-4.8  turns=32  wall=197s
+
+sveltejs__svelte-3141
+    repo=sveltejs/svelte  lang=JavaScript  framework=npm-script  result_source=mocha
+    f2p=1  p2p=50  solved_by=anthropic/claude-opus-4.8  turns=23  wall=207s
+
+sveltejs__svelte-906
+    repo=sveltejs/svelte  lang=JavaScript  framework=npm-script  result_source=mocha
+    f2p=1  p2p=1040  solved_by=anthropic/claude-opus-4.8  turns=4  wall=17s
+
+
+# ==== UNSOLVED by a frontier model (2) ====
+# Scored cleanly, but the fix was wrong. Headroom -- keeps the set from topping out.
+
+prettier__prettier-5015
+    repo=prettier/prettier  lang=JavaScript  framework=npm-script  result_source=jest
+    f2p=1  p2p=0  attempted_by=anthropic/claude-opus-4.8  turns=62  wall=660s
+
+sveltejs__svelte-4332
+    repo=sveltejs/svelte  lang=JavaScript  framework=npm-script  result_source=mocha
+    f2p=1  p2p=2692  attempted_by=anthropic/claude-opus-4.8  turns=87  wall=2860s
+

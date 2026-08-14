@@ -1,0 +1,24 @@
+{
+  "providers": {
+    "selfhosted": {
+      "name": "Self-hosted SGLang",
+      "baseUrl": "http://localhost:30000/v1",
+      "apiKey": "sglang-local",
+      "api": "openai-completions",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "local-model",
+          "name": "Self-hosted (SGLang on :30000)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 8192
+        }
+      ]
+    }
+  }
+}

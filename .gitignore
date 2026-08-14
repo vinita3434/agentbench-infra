@@ -1,0 +1,24 @@
+# Fetched task data and run outputs are reproducible; don't commit them.
+tasks/data/
+tasks/manifest.jsonl
+results/**/pi_log.jsonl
+results/**/pi_stderr.log
+results/**/candidate.patch
+results/**/run_record.json
+results/serve/*.json
+results/serve/*.server.log
+
+# Keep the directories themselves.
+!results/.gitkeep
+!results/serve/.gitkeep
+
+# Isolated Pi config dir used by run/run_pod.sh (PI_CODING_AGENT_DIR).
+# models.json is regenerated from run/pi_config/models.selfhosted.json; the rest
+# is per-machine state, and auth.json holds credentials.
+run/pi_config/pod_home/
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store

@@ -1,0 +1,12 @@
+.git
+results
+tasks/data
+tasks/manifest.jsonl
+serve
+harness
+**/__pycache__
+*.pyc
+.venv
+venv
+.DS_Store
+README.md

@@ -1,0 +1,80 @@
+# Central model registry for agent-serving-bench.
+#
+# Every serve/ script reads from this file. Adding a model = adding one entry
+# here, never editing a script.
+#
+# Fields per model:
+#   hf_repo         HuggingFace repo id to download and serve.
+#   sglang_version  EXACT pinned SGLang version this model is validated against.
+#                   Never "latest". Different models may pin different versions;
+#                   setup.sh detects a mismatch and asks before switching.
+#   quantization    Value passed to SGLang --quantization. "fp8" on a bf16 repo
+#                   means online dynamic fp8; on a *-FP8 repo it selects the
+#                   pre-quantized checkpoint format.
+#   parser          SGLang --tool-call-parser. A WRONG value is a silent failure
+#                   mode -> launch.sh runs a live tool-call test to catch it.
+#   reasoning_parser SGLang --reasoning-parser. Empty string = don't pass the flag
+#                   (model has no separate thinking channel).
+#   context_length  Served context window (--context-length).
+#   tp_size         Tensor-parallel degree (--tp-size). 1 = single GPU.
+#
+# NOTE: parser/version pairings below reflect what each model's maintainers and
+# the SGLang docs documented at time of writing. They are deliberately explicit
+# and versioned; verify against the pinned SGLang release notes before a sweep,
+# and trust the launch.sh PASS/FAIL tool-call test as the final word.
+
+models:
+  qwen3-coder-30b:
+    # MoE (30.5B total / 3.3B active), coding-tuned, GQA. Pre-quantized FP8.
+    hf_repo: Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8
+    sglang_version: "0.5.2"
+    quantization: fp8
+    parser: qwen3_coder
+    reasoning_parser: ""          # Instruct (non-thinking) variant.
+    context_length: 262144
+    tp_size: 1
+
+  qwen3-32b:
+    # Dense 32B, GQA, hybrid thinking model. Pre-quantized FP8.
+    hf_repo: Qwen/Qwen3-32B-FP8
+    sglang_version: "0.5.2"
+    quantization: fp8
+    parser: qwen25                # Hermes-style tool calls for Qwen3 non-coder.
+    reasoning_parser: qwen3       # Emits <think>...</think>.
+    context_length: 131072
+    tp_size: 1
+
+  devstral-24b:
+    # Dense 24B, GQA, agent-tuned (built with All Hands for coding agents).
+    # bf16 repo -> online fp8 quant to fit a single 48GB/80GB card.
+    hf_repo: mistralai/Devstral-Small-2507
+    sglang_version: "0.5.2"
+    quantization: fp8
+    parser: mistral
+    reasoning_parser: ""
+    context_length: 131072
+    tp_size: 1
+
+  glm-4.5-air:
+    # MoE, MLA. Pre-quantized FP8.
+    hf_repo: zai-org/GLM-4.5-Air-FP8
+    sglang_version: "0.5.2"
+    quantization: fp8
+    parser: glm45
+    reasoning_parser: glm45
+    context_length: 131072
+    tp_size: 1
+
+  deepseek-coder-lite:
+    # MoE (16B total / 2.4B active), MLA, small. Older model -> pins an OLDER
+    # SGLang version on purpose, which exercises setup.sh's version-switch path.
+    # bf16 repo -> online fp8 quant. deepseekv3 parser is the closest match;
+    # this model is the most likely to fail launch.sh's tool-call test, which
+    # is exactly why that test exists.
+    hf_repo: deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct
+    sglang_version: "0.4.6"
+    quantization: fp8
+    parser: deepseekv3
+    reasoning_parser: ""
+    context_length: 131072
+    tp_size: 1

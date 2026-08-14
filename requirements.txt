@@ -1,0 +1,6 @@
+# Python deps for the harness tooling (not for serving -- SGLang is installed
+# separately by serve/setup.sh against a pinned version).
+pyyaml>=6.0        # serve/_registry.py reads models.yaml
+datasets>=2.19     # tasks/fetch_tasks.py pulls SWE-PolyBench
+huggingface_hub>=0.23
+certifi>=2024.2      # tasks/verifiability.py probes GHCR over TLS

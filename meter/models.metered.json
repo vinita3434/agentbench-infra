@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "Pi provider config for the METERED open-weight path.",
+    "Identical to run/pi_config/models.selfhosted.json except baseUrl points at",
+    "the meter proxy (:8100) instead of SGLang (:30000), so every call is",
+    "recorded on the way through. Kept here rather than edited into",
+    "run/pi_config/ so the unmetered path stays exactly as it was.",
+    "",
+    "Use it by pointing PI_CODING_AGENT_DIR at a directory containing this file",
+    "as models.json:",
+    "  mkdir -p /tmp/pi-metered",
+    "  cp meter/models.metered.json /tmp/pi-metered/models.json",
+    "  export PI_CODING_AGENT_DIR=/tmp/pi-metered",
+    "",
+    "compat flags: SGLang commonly rejects the 'developer' role and",
+    "reasoning_effort; sending them causes 400s that look like model failures.",
+    "",
+    "supportsUsageInStreaming is pinned true (Pi's default) because a streamed",
+    "response carries no usage object without stream_options.include_usage --",
+    "and without usage there are no token counts, which silently removes four",
+    "of the five metrics. Pinned rather than relied upon."
+  ],
+  "providers": {
+    "selfhosted": {
+      "name": "Self-hosted SGLang (metered)",
+      "baseUrl": "http://localhost:8100/v1",
+      "apiKey": "sglang-local",
+      "api": "openai-completions",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "supportsUsageInStreaming": true
+      },
+      "models": [
+        {
+          "id": "local-model",
+          "name": "Self-hosted via meter proxy",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 8192
+        }
+      ]
+    }
+  }
+}

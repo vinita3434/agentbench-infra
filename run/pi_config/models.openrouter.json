@@ -1,0 +1,26 @@
+{
+  "openrouter": {
+    "name": "OpenRouter",
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "apiKey": "$OPENROUTER_API_KEY",
+    "api": "openai-completions",
+    "models": [
+      {
+        "id": "anthropic/claude-sonnet-5",
+        "name": "Claude Sonnet 5 (OpenRouter)",
+        "reasoning": true,
+        "input": ["text"],
+        "contextWindow": 200000,
+        "maxTokens": 8192
+      },
+      {
+        "id": "anthropic/claude-opus-4.8",
+        "name": "Claude Opus 4.8 (OpenRouter)",
+        "reasoning": true,
+        "input": ["text"],
+        "contextWindow": 200000,
+        "maxTokens": 8192
+      }
+    ]
+  }
+}
