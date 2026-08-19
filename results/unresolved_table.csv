@@ -1,0 +1,12 @@
+task_id,task_name,language,repo,model,provider,difficulty,pass_n,task_attempts_total,passed_on_attempt,prior_failed_attempts,turns,wall_seconds,cost_usd,llm_calls,patch_bytes,f2p,p2p,timestamp_utc
+sveltejs__svelte-4332,:global(...) .child selector is given svelte- suffix if there is a variable class name in the html,JavaScript,sveltejs/svelte,anthropic/claude-opus-4.8,openrouter,hard,1,2,,0,87,2860,6.568209000000001,87,230067,0/1,2692/2692,20260812T155045Z
+prettier__prettier-5015,Pipe operator with comment problem,JavaScript,prettier/prettier,anthropic/claude-opus-4.8,openrouter,hard,1,2,,0,62,660,1.5792467499999996,62,4482,0/1,0/0,20260811T114052Z
+langchain-ai__langchain-4420,WhatsAppChatLoader doesn't work on chats exported from WhatsApp,Python,langchain-ai/langchain,anthropic/claude-opus-4.8,openrouter,hard,2,2,,1,1,3,0.0,1,0,0/1,0/0,20260813T082849Z
+prettier__prettier-8381,,JavaScript,prettier/prettier,anthropic/claude-sonnet-5,openrouter,hard,1,1,,0,67,4242,0.4633373,67,4674,0/3,2/2,20260806T124151Z
+prettier__prettier-5015,Pipe operator with comment problem,JavaScript,prettier/prettier,anthropic/claude-sonnet-5,openrouter,hard,2,2,,1,35,733,0.24561710000000003,35,397809,0/1,0/0,20260817T144242Z
+serverless__serverless-2842,Include Multiple Resource Files,JavaScript,serverless/serverless,anthropic/claude-sonnet-5,openrouter,hard,1,2,,0,20,116,0.1169974,20,4196,0/1,26/26,20260818T165711Z
+langchain-ai__langchain-4420,WhatsAppChatLoader doesn't work on chats exported from WhatsApp,Python,langchain-ai/langchain,anthropic/claude-sonnet-5,openrouter,hard,1,2,,0,13,72,0.0695428,13,1760,0/1,0/0,20260813T081923Z
+sveltejs__svelte-4332,:global(...) .child selector is given svelte- suffix if there is a variable class name in the html,JavaScript,sveltejs/svelte,anthropic/claude-sonnet-5,openrouter,hard,2,2,,1,1,9,0.0,1,0,0/1,2692/2692,20260817T144404Z
+serverless__serverless-2842,Include Multiple Resource Files,JavaScript,serverless/serverless,moonshotai/kimi-k2.7-code,openrouter,hard,2,2,,1,51,275,0.45946356000000005,51,6989,0/1,26/26,20260818T181113Z
+serverless__serverless-4794,AWS deploy fails with empty error message if S3.headObject responds with 403,JavaScript,serverless/serverless,moonshotai/kimi-k2.7-code,openrouter,medium,2,2,,0,22,111,0.12772398,27,528883,0/1,81/81,20260817T173646Z
+sveltejs__svelte-3141,:not(...) styles are broken,JavaScript,sveltejs/svelte,qwen/qwen3-coder-plus,openrouter,medium,2,3,,0,24,567,0.05626984999999999,24,285827,0/1,50/50,20260817T161619Z

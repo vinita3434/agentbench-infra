@@ -1,0 +1,13 @@
+task	gold_f2p	base_f2p	verdict	note
+pytest-dev__pytest-6116	2/2	0/2	VALID	
+django__django-14534	-	-	SKIP	non-pytest test ids (django/sympy runner)
+sympy__sympy-18057	-	-	SKIP	non-pytest test ids (django/sympy runner)
+django__django-15061	-	-	SKIP	non-pytest test ids (django/sympy runner)
+sympy__sympy-20212	-	-	SKIP	non-pytest test ids (django/sympy runner)
+sympy__sympy-17139	-	-	SKIP	non-pytest test ids (django/sympy runner)
+django__django-14411	-	-	SKIP	non-pytest test ids (django/sympy runner)
+django__django-14915	-	-	SKIP	non-pytest test ids (django/sympy runner)
+pylint-dev__pylint-7080	1/1	0/1	VALID	
+matplotlib__matplotlib-23314	1/1	1/1	NON-DISCRIMINATING	F2P pass with no fix
+pytest-dev__pytest-5227	-	-	SKIP	non-pytest test ids (django/sympy runner)
+matplotlib__matplotlib-25433	1/1	0/1	VALID	

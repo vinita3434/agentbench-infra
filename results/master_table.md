@@ -7,37 +7,59 @@ Cost is the **sum of per-call costs** from Pi's event stream. Each
 assistant message carries its own call cost; `totalTokens` on the same
 object grows monotonically (context accumulating) and is not summable.
 
-| # | Task ID | Task name | Lang | Model | Resolved | Turns | Wall | Cost |
-|---|---|---|---|---|---|---|---|---|
-| 1 | `sveltejs__svelte-4332` | :global(...) .child selector is given svelte- suffix i… | JavaScript | claude-opus-4.8 | no | 87 | 47m40s | $6.5682 |
-| 2 | `prettier__prettier-5015` | Pipe operator with comment problem | JavaScript | claude-opus-4.8 | no | 62 | 11m00s | $1.5792 |
-| 3 | `prettier__prettier-3382` | Typescript: decorator + readonly + comment leads to un… | JavaScript | claude-opus-4.8 | yes | 52 | 5m30s | $0.9670 |
-| 4 | `sveltejs__svelte-1310` | Spread properties cause CSS to be DCE'd incorrectly | JavaScript | claude-opus-4.8 | yes | 32 | 3m17s | $0.4174 |
-| 5 | `keras-team__keras-19300` | *(task data not retained)* | Python | claude-opus-4.8 | ERROR | 14 | 1m56s | $0.3453 |
-| 6 | `sveltejs__svelte-3141` | :not(...) styles are broken | JavaScript | claude-opus-4.8 | yes | 23 | 3m27s | $0.3404 |
-| 7 | `prettier__prettier-12930` | Syntax error after formatting when using computed key … | JavaScript | claude-opus-4.8 | yes | 32 | 3m23s | $0.3304 |
-| 8 | `serverless__serverless-4794` | AWS deploy fails with empty error message if S3.headOb… | JavaScript | claude-opus-4.8 | yes | 12 | 1m09s | $0.2453 |
-| 9 | `serverless__serverless-6749` | *(task data not retained)* | JavaScript | claude-opus-4.8 | not verified | 10 | 59s | $0.1544 |
-| 10 | `prettier__prettier-3405` | 1.9: Trailing comma not adding in code blocks in markd… | JavaScript | claude-opus-4.8 | yes | 8 | 52s | $0.1416 |
-| 11 | `langchain-ai__langchain-4646` | PydanticOutputParser has high chance failing when comp… | Python | claude-opus-4.8 | yes | 6 | 24s | $0.0736 |
-| 12 | `sveltejs__svelte-906` | Attribute name only (no value) CSS selector throws if … | JavaScript | claude-opus-4.8 | yes | 4 | 17s | $0.0437 |
-| 13 | `langchain-ai__langchain-6765` | Recent tags change causes AttributeError: 'str' object… | Python | claude-opus-4.8 | yes | 3 | 11s | $0.0384 |
-| 14 | `langchain-ai__langchain-7653` | SQLite LLM cache clear does not take effect | Python | claude-opus-4.8 | yes | 4 | 16s | $0.0372 |
-| 15 | `langchain-ai__langchain-5584` | Chroma.update_document bug | Python | claude-opus-4.8 | ERROR | 3 | 12s | $0.0354 |
-| 16 | `langchain-ai__langchain-4420` | WhatsAppChatLoader doesn't work on chats exported from… | Python | claude-opus-4.8 | no | 1 | 3s | $0.0000 |
-| 17 | `serverless__serverless-5602` | Parent paths no longer working for package inclusions/… | JavaScript | claude-sonnet-5 | yes | 56 | 7m37s | $0.5037 |
-| 18 | `prettier__prettier-8381` | *(task data not retained)* | JavaScript | claude-sonnet-5 | no | 67 | 70m42s | $0.4633 |
-| 19 | `serverless__serverless-6749` | *(task data not retained)* | JavaScript | claude-sonnet-5 | not verified | 46 | 6m00s | $0.4042 |
-| 20 | `serverless__serverless-7374` | serverlessrc keeps changing | JavaScript | claude-sonnet-5 | yes | 23 | 2m18s | $0.1680 |
-| 21 | `langchain-ai__langchain-3367` | Terminal tool gives `ValueError: Could not parse LLM o… | Python | claude-sonnet-5 | yes | 19 | 1m47s | $0.0943 |
-| 22 | `langchain-ai__langchain-4420` | WhatsAppChatLoader doesn't work on chats exported from… | Python | claude-sonnet-5 | no | 13 | 1m12s | $0.0695 |
-| 23 | `langchain-ai__langchain-6456` | ChatPromptTemplate with partial variables is giving va… | Python | claude-sonnet-5 | yes | 13 | 55s | $0.0522 |
+| # | Task ID | Task name | Lang | Diff | Model | Pass | Resolved | Turns | Wall | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | `sveltejs__svelte-4332` | :global(...) .child selector is given svelte- suffix i… | JavaScript | hard | claude-opus-4.8 | 1/2 | no | 87 | 47m40s | $6.5682 |
+| 2 | `prettier__prettier-5015` | Pipe operator with comment problem | JavaScript | hard | claude-opus-4.8 | 1/2 | no | 62 | 11m00s | $1.5792 |
+| 3 | `prettier__prettier-3382` | Typescript: decorator + readonly + comment leads to un… | JavaScript | medium | claude-opus-4.8 | 1/1 | yes | 52 | 5m30s | $0.9670 |
+| 4 | `sveltejs__svelte-1310` | Spread properties cause CSS to be DCE'd incorrectly | JavaScript | medium | claude-opus-4.8 | 1/1 | yes | 32 | 3m17s | $0.4174 |
+| 5 | `keras-team__keras-19300` | *(task data not retained)* | Python | unrated | claude-opus-4.8 | 1/1 | ERROR | 14 | 1m56s | $0.3453 |
+| 6 | `sveltejs__svelte-3141` | :not(...) styles are broken | JavaScript | medium | claude-opus-4.8 | 1/3 | yes | 23 | 3m27s | $0.3404 |
+| 7 | `prettier__prettier-12930` | Syntax error after formatting when using computed key … | JavaScript | medium | claude-opus-4.8 | 1/2 | yes | 32 | 3m23s | $0.3304 |
+| 8 | `serverless__serverless-4794` | AWS deploy fails with empty error message if S3.headOb… | JavaScript | medium | claude-opus-4.8 | 1/2 | yes | 12 | 1m09s | $0.2453 |
+| 9 | `serverless__serverless-6749` | FetchError: network timeout on tracking.serverlessteam… | JavaScript | unrated | claude-opus-4.8 | 2/2 | not verified | 10 | 59s | $0.1544 |
+| 10 | `prettier__prettier-3405` | 1.9: Trailing comma not adding in code blocks in markd… | JavaScript | medium | claude-opus-4.8 | 1/2 | yes | 8 | 52s | $0.1416 |
+| 11 | `langchain-ai__langchain-4646` | PydanticOutputParser has high chance failing when comp… | Python | easy | claude-opus-4.8 | 1/1 | yes | 6 | 24s | $0.0736 |
+| 12 | `sveltejs__svelte-906` | Attribute name only (no value) CSS selector throws if … | JavaScript | easy | claude-opus-4.8 | 1/1 | yes | 4 | 17s | $0.0437 |
+| 13 | `langchain-ai__langchain-6765` | Recent tags change causes AttributeError: 'str' object… | Python | easy | claude-opus-4.8 | 1/1 | yes | 3 | 11s | $0.0384 |
+| 14 | `langchain-ai__langchain-7653` | SQLite LLM cache clear does not take effect | Python | easy | claude-opus-4.8 | 1/2 | yes | 4 | 16s | $0.0372 |
+| 15 | `langchain-ai__langchain-5584` | Chroma.update_document bug | Python | unrated | claude-opus-4.8 | 1/1 | ERROR | 3 | 12s | $0.0354 |
+| 16 | `langchain-ai__langchain-4420` | WhatsAppChatLoader doesn't work on chats exported from… | Python | hard | claude-opus-4.8 | 2/2 | no | 1 | 3s | $0.0000 |
+| 17 | `serverless__serverless-5602` | Parent paths no longer working for package inclusions/… | JavaScript | medium | claude-sonnet-5 | 1/2 | yes | 56 | 7m37s | $0.5037 |
+| 18 | `prettier__prettier-8381` | *(task data not retained)* | JavaScript | hard | claude-sonnet-5 | 1/1 | no | 67 | 70m42s | $0.4633 |
+| 19 | `serverless__serverless-6749` | FetchError: network timeout on tracking.serverlessteam… | JavaScript | unrated | claude-sonnet-5 | 1/2 | not verified | 46 | 6m00s | $0.4042 |
+| 20 | `serverless__serverless-5571` | schedule from file with default value removes space | JavaScript | medium | claude-sonnet-5 | 1/1 | yes | 40 | 6m17s | $0.3029 |
+| 21 | `sveltejs__svelte-2092` | Proposal: `dev: true` only affects runtime warnings an… | JavaScript | medium | claude-sonnet-5 | 1/1 | yes | 40 | 85m03s | $0.2533 |
+| 22 | `prettier__prettier-5015` | Pipe operator with comment problem | JavaScript | hard | claude-sonnet-5 | 2/2 | no | 35 | 12m13s | $0.2456 |
+| 23 | `serverless__serverless-7374` | serverlessrc keeps changing | JavaScript | medium | claude-sonnet-5 | 1/1 | yes | 23 | 2m18s | $0.1680 |
+| 24 | `prettier__prettier-361` | Export extension syntax not formatted correctly | JavaScript | medium | claude-sonnet-5 | 1/1 | yes | 31 | 3m59s | $0.1522 |
+| 25 | `serverless__serverless-5775` | Fallback value for unset variable is removing spaces | JavaScript | medium | claude-sonnet-5 | 1/2 | yes | 27 | 2m23s | $0.1388 |
+| 26 | `serverless__serverless-2842` | Include Multiple Resource Files | JavaScript | hard | claude-sonnet-5 | 1/2 | no | 20 | 1m56s | $0.1170 |
+| 27 | `langchain-ai__langchain-3367` | Terminal tool gives `ValueError: Could not parse LLM o… | Python | medium | claude-sonnet-5 | 1/2 | yes | 19 | 1m47s | $0.0943 |
+| 28 | `langchain-ai__langchain-4420` | WhatsAppChatLoader doesn't work on chats exported from… | Python | hard | claude-sonnet-5 | 1/2 | no | 13 | 1m12s | $0.0695 |
+| 29 | `serverless__serverless-7031` | AWS - ability to request DynamoDB.DocumentClient in a … | JavaScript | easy | claude-sonnet-5 | 1/2 | yes | 14 | 1m01s | $0.0564 |
+| 30 | `langchain-ai__langchain-6456` | ChatPromptTemplate with partial variables is giving va… | Python | medium | claude-sonnet-5 | 1/2 | yes | 13 | 55s | $0.0522 |
+| 31 | `sveltejs__svelte-4332` | :global(...) .child selector is given svelte- suffix i… | JavaScript | hard | claude-sonnet-5 | 2/2 | no | 1 | 9s | $0.0000 |
+| 32 | `serverless__serverless-2842` | Include Multiple Resource Files | JavaScript | hard | kimi-k2.7-code | 2/2 | no | 51 | 4m35s | $0.4595 |
+| 33 | `serverless__serverless-5775` | Fallback value for unset variable is removing spaces | JavaScript | medium | kimi-k2.7-code | 2/2 | yes | 35 | 4m35s | $0.4502 |
+| 34 | `serverless__serverless-5602` | Parent paths no longer working for package inclusions/… | JavaScript | medium | kimi-k2.7-code | 2/2 | yes | 40 | 3m53s | $0.3635 |
+| 35 | `sveltejs__svelte-3141` | :not(...) styles are broken | JavaScript | medium | kimi-k2.7-code | 3/3 | yes | 65 | 8m24s | $0.3575 |
+| 36 | `langchain-ai__langchain-6456` | ChatPromptTemplate with partial variables is giving va… | Python | medium | kimi-k2.7-code | 2/2 | yes | 48 | 4m47s | $0.2139 |
+| 37 | `prettier__prettier-3405` | 1.9: Trailing comma not adding in code blocks in markd… | JavaScript | medium | kimi-k2.7-code | 2/2 | yes | 36 | 3m03s | $0.2100 |
+| 38 | `serverless__serverless-4794` | AWS deploy fails with empty error message if S3.headOb… | JavaScript | medium | kimi-k2.7-code | 2/2 | no | 22 | 1m51s | $0.1277 |
+| 39 | `langchain-ai__langchain-3367` | Terminal tool gives `ValueError: Could not parse LLM o… | Python | medium | kimi-k2.7-code | 2/2 | yes | 31 | 1m35s | $0.1124 |
+| 40 | `prettier__prettier-12930` | Syntax error after formatting when using computed key … | JavaScript | medium | kimi-k2.7-code | 2/2 | yes | 41 | 4m29s | $0.0937 |
+| 41 | `serverless__serverless-7031` | AWS - ability to request DynamoDB.DocumentClient in a … | JavaScript | easy | kimi-k2.7-code | 2/2 | yes | 14 | 2m34s | $0.0597 |
+| 42 | `langchain-ai__langchain-7653` | SQLite LLM cache clear does not take effect | Python | easy | kimi-k2.7-code | 2/2 | yes | 17 | 1m02s | $0.0557 |
+| 43 | `sveltejs__svelte-3141` | :not(...) styles are broken | JavaScript | medium | qwen3-coder-plus | 2/3 | no | 24 | 9m27s | $0.0563 |
 
 ## Per model
 
 | Model | Runs | Resolved | Total cost | Avg per resolved |
 |---|---|---|---|---|
 | anthropic/claude-opus-4.8 | 16 | 10/13 scored | $11.3175 | $0.2635 |
-| anthropic/claude-sonnet-5 | 7 | 4/6 scored | $1.7552 | $0.2045 |
+| anthropic/claude-sonnet-5 | 15 | 9/14 scored | $3.0215 | $0.1913 |
+| moonshotai/kimi-k2.7-code | 11 | 9/11 scored | $2.5038 | $0.2130 |
+| qwen/qwen3-coder-plus | 1 | 0/1 scored | $0.0563 | — |
 
-**23 episodes, $13.0727 total.**
+**43 episodes, $16.8991 total.**
