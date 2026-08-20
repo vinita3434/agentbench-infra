@@ -1,13 +1,36 @@
 task	gold_f2p	base_f2p	verdict	note
 pytest-dev__pytest-6116	2/2	0/2	VALID	
-django__django-14534	-	-	SKIP	non-pytest test ids (django/sympy runner)
-sympy__sympy-18057	-	-	SKIP	non-pytest test ids (django/sympy runner)
-django__django-15061	-	-	SKIP	non-pytest test ids (django/sympy runner)
-sympy__sympy-20212	-	-	SKIP	non-pytest test ids (django/sympy runner)
-sympy__sympy-17139	-	-	SKIP	non-pytest test ids (django/sympy runner)
-django__django-14411	-	-	SKIP	non-pytest test ids (django/sympy runner)
-django__django-14915	-	-	SKIP	non-pytest test ids (django/sympy runner)
+django__django-14534	2/2	0/2	VALID	
+sympy__sympy-18057	1/1	0/1	VALID	
+django__django-15061	3/3	0/3	VALID	
+sympy__sympy-20212	1/1	0/1	VALID	
+sympy__sympy-17139	2/2	0/2	VALID	
+django__django-14411	1/1	0/1	VALID	
+django__django-14915	1/1	0/1	VALID	
 pylint-dev__pylint-7080	1/1	0/1	VALID	
 matplotlib__matplotlib-23314	1/1	1/1	NON-DISCRIMINATING	F2P pass with no fix
-pytest-dev__pytest-5227	-	-	SKIP	non-pytest test ids (django/sympy runner)
+pytest-dev__pytest-5227	3/3	0/3	VALID	
 matplotlib__matplotlib-25433	1/1	0/1	VALID	
+sympy__sympy-16988	2/2	0/2	VALID	
+mwaskom__seaborn-3010	1/1	0/1	VALID	
+django__django-15400	2/2	0/2	VALID	
+pytest-dev__pytest-7432	1/1	0/1	VALID	
+sympy__sympy-21614	1/1	0/1	VALID	
+django__django-15902	1/1	0/1	VALID	
+pytest-dev__pytest-11148	2/2	0/2	VALID	
+astropy__astropy-12907	2/2	0/2	VALID	
+django__django-12113	1/1	0/1	VALID	
+mwaskom__seaborn-3190	1/1	0/1	VALID	
+sympy__sympy-13971	1/1	0/1	VALID	
+django__django-13447	1/1	0/1	VALID	
+astropy__astropy-6938	2/2	0/2	VALID	
+sympy__sympy-13647	1/1	0/1	VALID	
+scikit-learn__scikit-learn-13439	1/1	0/1	VALID	
+sympy__sympy-17655	2/2	0/2	VALID	
+pytest-dev__pytest-7168	11/11	10/11	VALID	
+pydata__xarray-4094	1/1	0/1	VALID	
+matplotlib__matplotlib-23476	1/1	0/1	VALID	
+pytest-dev__pytest-11143	1/1	0/1	VALID	
+pydata__xarray-5131	10/10	0/10	VALID	
+psf__requests-863	0/4	0/4	BROKEN	gold does not pass
+matplotlib__matplotlib-23563	1/1	0/1	VALID	

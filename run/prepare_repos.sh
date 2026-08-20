@@ -45,6 +45,8 @@ ids = [l.strip() for l in open(os.environ["TASKS"])
 for i in ids:
     p = root / "tasks" / "data" / f"{i}.json"
     if not p.exists():
+        p = root / "tasks" / "swebench_lite" / "data" / f"{i}.json"
+    if not p.exists():
         continue
     d = json.load(p.open())
     print(f"{d['repo']}\t{d['base_commit']}\t{i}")

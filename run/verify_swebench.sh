@@ -79,13 +79,34 @@ f2p, p2p = as_list(task.get("FAIL_TO_PASS")), as_list(task.get("PASS_TO_PASS"))
 # patch), and some tasks carry parsing debris in PASS_TO_PASS ("[100%]") that
 # is not a test id at all. Running the files and matching names out of the
 # JUnit xml sidesteps both -- it costs extra test time, never correctness.
+# Django is the one repo this cannot serve: its suite runs under
+# tests/runtests.py, which emits no JUnit xml, so there is nothing for the
+# parser to read. Refuse rather than produce a confident wrong answer.
+# Three runner modes, chosen by repo. Each was picked by inspecting the actual
+# image, not assumed:
+#   pytest  most repos: pytest is installed and ids are node ids
+#   sympy   image ships NO pytest (sympy uses sympy.test()); pip install it,
+#           then treat as pytest -- ids are bare names, matched from the xml
+#   django  suite runs under tests/runtests.py and emits no JUnit xml at all,
+#           so it needs the separate unittest-output parser
+MODE = {"django/django": "django", "sympy/sympy": "sympy"}.get(task["repo"], "pytest")
+open(os.path.join(tmp, "mode.txt"), "w").write(MODE)
+
+# Which files to run. Node ids give them directly when present; otherwise fall
+# back to the files the test patch touches, which is what sympy needs -- its
+# ids are bare function names ("test_zero") with no file attached. Either way
+# the parser matches F2P/P2P by NAME out of the xml, so the file list only has
+# to be a superset of where those tests live.
 addressable = [t for t in (f2p + p2p) if "::" in t]
-if not addressable:
-    sys.exit("no pytest-style test ids for this task (django/sympy use their "
-             "own runners; not handled here).")
-if not any("::" in t for t in f2p):
-    sys.exit("no addressable FAIL_TO_PASS ids -- cannot score this task.")
 test_files = sorted({t.split("::", 1)[0] for t in addressable})
+if not test_files:
+    test_files = sorted({
+        line[6:].split("\t")[0]
+        for line in (task.get("test_patch") or "").splitlines()
+        if line.startswith("+++ b/")
+    })
+if not test_files:
+    sys.exit("could not determine which test files to run.")
 
 if use_gold == "1":
     model_patch = task.get("patch") or ""
@@ -108,6 +129,42 @@ for line in (task.get("test_patch") or "").splitlines():
         if p not in ("/dev/null", ""):
             paths.add(p[2:] if p[:2] in ("a/", "b/") else p)
 open(os.path.join(tmp, "test_paths.txt"), "w").write("".join(f"{p}\n" for p in sorted(paths)))
+
+# django: run whole test MODULES, not individual tests. Deriving a label per
+# test id fails for entries SWE-bench recorded as docstrings rather than ids
+# ("AdminSite.get_action() returns an action even if disabled.") -- those tests
+# would simply never run and score as not_found, sinking a correct patch.
+# The module comes from the test patch: tests/admin_views/test_adminsite.py ->
+# admin_views.test_adminsite
+django_labels = []
+if MODE == "django":
+    for path in test_files:
+        label = path[len("tests/"):] if path.startswith("tests/") else path
+        if label.endswith(".py"):
+            label = label[:-3]
+        django_labels.append(label.replace("/", "."))
+    django_labels = sorted(set(django_labels))
+    if not django_labels:
+        sys.exit("could not derive django test modules from the test patch.")
+open(os.path.join(tmp, "django_labels.txt"),
+     "w").write("".join(f"{l}\n" for l in django_labels))
+
+if MODE == "django":
+    test_cmd = """
+cd /testbed
+tr '\\n' '\\0' < /verify/django_labels.txt | xargs -0 --no-run-if-empty \\
+  python tests/runtests.py --verbosity 2 --noinput \\
+    > /verify/test_stdout.txt 2>/verify/test_stderr.txt
+"""
+else:
+    prep = ("python -m pytest --version >/dev/null 2>&1 || "
+            "python -m pip install -q pytest >/dev/null 2>&1\n") if MODE == "sympy" else ""
+    test_cmd = prep + """
+tr '\\n' '\\0' < /verify/node_ids.txt | xargs -0 --no-run-if-empty \\
+  python -m pytest -rA -p no:cacheprovider --continue-on-collection-errors \\
+    --junitxml=/verify/test-results.xml \\
+    > /verify/test_stdout.txt 2>/verify/test_stderr.txt
+"""
 
 runner = f"""#!/bin/bash
 source /opt/miniconda3/bin/activate testbed 2>/dev/null || true
@@ -142,11 +199,8 @@ else
     && echo OK > /verify/test_apply.status || echo FAIL > /verify/test_apply.status
 fi
 
-# Run whole test files; the parser matches F2P/P2P by name from the xml.
-tr '\\n' '\\0' < /verify/node_ids.txt | xargs -0 --no-run-if-empty \
-  python -m pytest -rA -p no:cacheprovider --continue-on-collection-errors \
-    --junitxml=/verify/test-results.xml \
-    > /verify/test_stdout.txt 2>/verify/test_stderr.txt
+# Runner chosen per repo above; the parser matches F2P/P2P by name.
+{test_cmd}
 echo "exit=$?" > /verify/test_command.status
 """
 open(os.path.join(tmp, "run.sh"), "w").write(runner)
@@ -183,10 +237,18 @@ t["F2P"], t["P2P"] = t.get("FAIL_TO_PASS"), t.get("PASS_TO_PASS")
 json.dump(t, open(dst, "w"))
 PY
 
-python3 "$HERE/_verify_parse.py" \
-  "$VIEW" "$TMP/test_stdout.txt" "$OUT/verify.json" \
-  "$PATCH_SOURCE" "$MODEL_APPLY" "$TEST_APPLY" \
-  "$TMP/test_stderr.txt" "$TMP/test-results.xml"
+MODE="$(cat "$TMP/mode.txt" 2>/dev/null || echo pytest)"
+if [[ "$MODE" == "django" ]]; then
+  # No JUnit xml exists for django; its verbose unittest output is the source.
+  python3 "$HERE/_swebench_parse.py" \
+    "$VIEW" "$TMP/test_stdout.txt" "$OUT/verify.json" \
+    "$PATCH_SOURCE" "$MODEL_APPLY" "$TEST_APPLY" "$TMP/test_stderr.txt"
+else
+  python3 "$HERE/_verify_parse.py" \
+    "$VIEW" "$TMP/test_stdout.txt" "$OUT/verify.json" \
+    "$PATCH_SOURCE" "$MODEL_APPLY" "$TEST_APPLY" \
+    "$TMP/test_stderr.txt" "$TMP/test-results.xml"
+fi
 
 echo "[swebench] wrote $OUT/verify.json"
 if [[ "$KEEP_IMAGE" -eq 0 ]]; then

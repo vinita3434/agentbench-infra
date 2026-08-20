@@ -56,7 +56,13 @@ while [[ $# -gt 0 ]]; do
 done
 [[ -n "$TASK" ]] || { echo "usage: run_task.sh --task <id> --mode <docker|native>" >&2; exit 2; }
 
+# Task records live in one of two datasets. SWE-PolyBench is checked first so
+# existing behaviour is untouched; SWE-bench Lite is a fallback, which keeps
+# this additive -- no PolyBench task resolves differently than before.
 TASK_JSON="$REPO_ROOT/tasks/data/${TASK}.json"
+if [[ ! -f "$TASK_JSON" && -f "$REPO_ROOT/tasks/swebench_lite/data/${TASK}.json" ]]; then
+  TASK_JSON="$REPO_ROOT/tasks/swebench_lite/data/${TASK}.json"
+fi
 [[ -f "$TASK_JSON" ]] || { echo "no task file: $TASK_JSON (run tasks/fetch_tasks.py)" >&2; exit 1; }
 
 task_field() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get(sys.argv[2]) or "")' "$TASK_JSON" "$1"; }
@@ -66,6 +72,20 @@ BASE_COMMIT="$(task_field base_commit)"
 # results/<model-slug>/<task_id>/
 MODEL_SLUG="$(printf '%s' "$MODEL" | tr '/:' '__')"
 OUT="$REPO_ROOT/results/${MODEL_SLUG}/${TASK}"
+
+# An episode is (task, model, attempt). A retry must not overwrite the previous
+# attempt -- comparing them is the whole reason to retry. Any existing record is
+# moved aside as <task>__aN before this run writes, so every attempt keeps its
+# own directory with its own pi_log, patch, metrics and verdict.
+#
+# Skipped inside the container: docker mode re-enters this script as native, and
+# archiving there would file away the directory the outer invocation just made.
+if [[ -z "${RUN_DEPLOYMENT:-}" && -f "$OUT/run_record.json" ]]; then
+  n=1
+  while [[ -e "${OUT}__a${n}" ]]; do n=$((n + 1)); done
+  mv "$OUT" "${OUT}__a${n}"
+  echo "[run] previous attempt archived -> $(basename "${OUT}__a${n}")"
+fi
 
 # =========================================================================
 # GOLD-FIRST PREFLIGHT: is this task scoreable here at all?
@@ -220,6 +240,13 @@ with open(path, "w") as f:
     json.dump(record, f, indent=2)
 print(f"[run] run record -> {path}")
 PY
+
+# Metrics, including the model-time / tool-time split, are written here so every
+# run carries them. Reconstructing the split afterwards from the raw stream was
+# how a 74-minute post-agent pipe hang got mistaken for 74 minutes of work.
+python3 "$HERE/extract_metrics.py" "$OUT" >/dev/null 2>&1 \
+  && echo "[run] metrics -> $OUT/metrics.json" \
+  || echo "[run] metrics extraction skipped (see $OUT/pi_log.jsonl)"
 
 echo "[run] results in $OUT"
 [[ "$PI_RC" -eq 0 ]] || echo "[run] NOTE: pi returned non-zero; see $OUT/pi_stderr.log" >&2

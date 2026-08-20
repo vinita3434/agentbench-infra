@@ -107,6 +107,58 @@ def load_timed_events(task_dir):
     return out, False
 
 
+def time_split(events):
+    """Split the episode into model time, tool time, and everything else.
+
+    An agentic episode alternates between waiting on the model and running
+    commands locally, and the two are governed by completely different things:
+    model time scales with context and is what a serving stack controls, tool
+    time is npm installs and test suites and is unaffected by the model.
+
+    `agent_span_s` is first event to last -- the agent's real lifetime. It is
+    NOT the same as run_record.wall_seconds: a bash tool that leaves a
+    background process holding stdout keeps the pipe, and therefore the shell,
+    open long after the agent finished. One svelte episode finished in 653s and
+    recorded 5103s. Span is the number to reason with; the difference is
+    reported as `post_agent_hang_s` rather than hidden.
+    """
+    span = model_s = tool_s = 0.0
+    msg_open = None
+    tool_open = None
+
+    for offset, event in events:
+        if offset is None:
+            continue
+        span = max(span, offset)
+        kind = event.get("type")
+        if kind == "message_start":
+            msg_open = (offset, (event.get("message") or {}).get("role"))
+        elif kind == "message_end":
+            if msg_open:
+                start, role = msg_open
+                # Only assistant messages cost model time; the user turn is the
+                # harness handing over a prompt it already has.
+                if role in (None, "assistant"):
+                    model_s += max(0.0, offset - start)
+                msg_open = None
+        elif kind == "tool_execution_start":
+            tool_open = offset
+        elif kind == "tool_execution_end":
+            if tool_open is not None:
+                tool_s += max(0.0, offset - tool_open)
+                tool_open = None
+
+    return {
+        "agent_span_s": round(span, 2),
+        "model_time_s": round(model_s, 2),
+        "tool_time_s": round(tool_s, 2),
+        # Inter-event gaps: Pi's own processing, patch handling, stream I/O.
+        "other_time_s": round(max(0.0, span - model_s - tool_s), 2),
+        "model_time_pct": round(100 * model_s / span, 1) if span else None,
+        "tool_time_pct": round(100 * tool_s / span, 1) if span else None,
+    }
+
+
 def metrics_for(task_dir):
     task_dir = pathlib.Path(task_dir)
     events, have_timing = load_timed_events(task_dir)
@@ -201,6 +253,17 @@ def metrics_for(task_dir):
         "pi_exit_code": run_record.get("pi_exit_code"),
         "per_turn": per_turn,
     }
+
+    # Where the episode's time actually went. Captured here, at extraction
+    # time, so every run carries it -- rather than being reconstructed later
+    # from the raw stream and argued about.
+    metrics["timing"] = time_split(events)
+    wall = run_record.get("wall_seconds")
+    span = metrics["timing"]["agent_span_s"]
+    if wall is not None and span:
+        # Positive values mean the shell kept waiting after the agent was done,
+        # usually a background process left holding stdout by a bash tool.
+        metrics["timing"]["post_agent_hang_s"] = round(max(0.0, wall - span), 2)
     return metrics
 
 

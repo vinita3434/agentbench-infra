@@ -50,7 +50,12 @@ done
 [[ -n "$MODEL"   ]] || { echo "--model <registry-key> is required (see: serve/_registry.py --list)" >&2; exit 2; }
 [[ -n "$WORKDIR" ]] || { echo "--workdir <repo checkout> is required" >&2; exit 2; }
 
+# Two datasets. PolyBench first so existing behaviour is unchanged; SWE-bench
+# Lite is a fallback, matching run_task.sh.
 TASK_JSON="$REPO_ROOT/tasks/data/${TASK}.json"
+if [[ ! -f "$TASK_JSON" && -f "$REPO_ROOT/tasks/swebench_lite/data/${TASK}.json" ]]; then
+  TASK_JSON="$REPO_ROOT/tasks/swebench_lite/data/${TASK}.json"
+fi
 [[ -f "$TASK_JSON" ]] || { echo "no task file: $TASK_JSON (run tasks/fetch_tasks.py)" >&2; exit 1; }
 [[ -d "$WORKDIR/.git" ]] || { echo "no git repo at $WORKDIR" >&2; exit 1; }
 
@@ -88,6 +93,15 @@ BASE_COMMIT="$(task_field base_commit)"
 # name. Every model is served as "local-model" so the Pi config never changes
 # when weights change; without this the whole sweep would overwrite itself.
 OUT="$REPO_ROOT/results/${MODEL}/${TASK}"
+
+# Same rule as Mode A: a retry archives the previous attempt rather than
+# overwriting it, so every (task, model, attempt) keeps its own record.
+if [[ -f "$OUT/run_record.json" ]]; then
+  n=1
+  while [[ -e "${OUT}__a${n}" ]]; do n=$((n + 1)); done
+  mv "$OUT" "${OUT}__a${n}"
+  echo "[pod] previous attempt archived -> $(basename "${OUT}__a${n}")"
+fi
 mkdir -p "$OUT"
 
 echo "[pod] task=$TASK label=$MODEL repo=$REPO base=$BASE_COMMIT"

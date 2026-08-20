@@ -115,6 +115,11 @@ def load_rows():
         f2p = (verify or {}).get("f2p") or {}
         p2p = (verify or {}).get("p2p") or {}
 
+        # Where the episode's time went. agent_span is the agent's real
+        # lifetime; wall_seconds can be far larger when a bash tool leaves a
+        # background process holding stdout after the agent is done.
+        timing = metrics.get("timing") or {}
+
         rows.append({
             "task_id": task,
             "task_name": name,
@@ -125,6 +130,11 @@ def load_rows():
             "resolved": resolved,
             "turns": metrics.get("turns"),
             "wall_seconds": record.get("wall_seconds"),
+            "agent_span_s": timing.get("agent_span_s"),
+            "model_time_s": timing.get("model_time_s"),
+            "tool_time_s": timing.get("tool_time_s"),
+            "model_time_pct": timing.get("model_time_pct"),
+            "post_agent_hang_s": timing.get("post_agent_hang_s"),
             "cost_usd": cost,
             "llm_calls": calls or None,
             "patch_bytes": record.get("patch_bytes"),
@@ -132,6 +142,18 @@ def load_rows():
             "p2p": f"{p2p.get('passed')}/{p2p.get('total')}" if p2p else "",
             "timestamp_utc": record.get("timestamp_utc", ""),
         })
+    # `model_attempt_n`: the Nth time THIS model has attempted THIS task. This
+    # is what identifies an episode -- a task retried by the same model is a
+    # genuinely different run, and overwriting it would erase the comparison.
+    by_pair = {}
+    for r in sorted(rows, key=lambda r: (r["model"], r["task_id"],
+                                         r["timestamp_utc"] or "")):
+        by_pair.setdefault((r["model"], r["task_id"]), []).append(r)
+    for attempts in by_pair.values():
+        for n, r in enumerate(attempts, 1):
+            r["model_attempt_n"] = n
+            r["model_attempts_total"] = len(attempts)
+
     # `pass_n`: the Nth time this task has been attempted, across all models,
     # ordered by run timestamp. Counted per task rather than per (task, model)
     # because the question it answers is "have we seen this task before" -- a
@@ -240,8 +262,10 @@ def write_markdown(rows):
 
 
 FIELDS = ["task_id", "task_name", "language", "repo", "model", "provider",
-          "difficulty", "resolved", "pass_n", "task_attempts_total", "passed_on_attempt",
-          "prior_failed_attempts", "turns", "wall_seconds",
+          "difficulty", "resolved", "model_attempt_n", "model_attempts_total",
+          "pass_n", "task_attempts_total", "passed_on_attempt",
+          "prior_failed_attempts", "turns", "wall_seconds", "agent_span_s",
+          "model_time_s", "tool_time_s", "model_time_pct", "post_agent_hang_s",
           "cost_usd", "llm_calls", "patch_bytes", "f2p", "p2p", "timestamp_utc"]
 
 

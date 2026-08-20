@@ -25,6 +25,10 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CSV_PATH = REPO_ROOT / "results" / "master_table.csv"
 XLSX_PATH = REPO_ROOT / "results" / "agentbench.xlsx"
 
+# Task-id sets, used to label which benchmark each episode came from.
+SWEBENCH_IDS = {p.stem for p in (REPO_ROOT / "tasks" / "swebench_lite" / "data").glob("*.json")}
+POLYBENCH_IDS = {p.stem for p in (REPO_ROOT / "tasks" / "data").glob("*.json")}
+
 # Which side of the comparison a model sits on. Keyed by the provider prefix of
 # the model string, so a new model from a known provider is classified without
 # an edit; unknown providers default to "open" and are flagged on stdout.
@@ -64,6 +68,22 @@ def abbrev(name: str) -> str:
     return name[:14]
 
 
+def active_share(part, other) -> str:
+    """"5m12s (62%)" where the percentage is of GPU+CPU only.
+
+    Overhead is deliberately left out of the denominator: it is Pi's own
+    processing and stream I/O, not work either side did, and including it makes
+    both shares shrink for reasons unrelated to the model. With it excluded the
+    two percentages sum to 100 and answer the question directly -- of the time
+    actually spent working, how much was the model thinking versus tools running.
+    """
+    part = num(part) or 0.0
+    total = part + (num(other) or 0.0)
+    if not total:
+        return hms(part)
+    return f"{hms(part)} ({100 * part / total:.0f}%)"
+
+
 def hms(seconds) -> str:
     if not seconds:
         return ""
@@ -85,10 +105,20 @@ def load():
     # Stable episode id: model slug + task + timestamp. Deterministic across
     # rebuilds, so a row keeps its id when new runs are appended.
     for r in rows:
+        # task + model + attempt. Stable across rebuilds (unlike a timestamp),
+        # and unique when the same model retries the same task -- which is the
+        # whole reason attempts are tracked separately per model.
         r["episode_id"] = (
-            f"{short(r['model'])}|{r['task_id']}|{(r.get('timestamp_utc') or '')[:15]}"
+            f"{r['task_id']}|{short(r['model'])}|a{r.get('model_attempt_n', 1)}"
         )
         r["class"] = model_class(r["model"])
+        r["dataset"] = ("SWE-bench Lite" if r["task_id"] in SWEBENCH_IDS
+                        else "SWE-PolyBench" if r["task_id"] in POLYBENCH_IDS else "?")
+        # The harness is Pi, unmodified, unless a context-strategy extension was
+        # threaded in. Recording it per episode is what makes round two -- hold
+        # the model fixed, vary the harness -- readable off the same sheet.
+        ext = (r.get("pi_extension") or "").strip()
+        r["harness"] = f"pi + {pathlib.Path(ext).stem}" if ext else "pi (baseline)"
     rows.sort(key=lambda r: (r["model"], r["task_id"], r.get("timestamp_utc") or ""))
     return rows
 
@@ -123,19 +153,24 @@ def style_sheet(ws, header_rows=1, widths=None):
 
 def sheet_master(wb, rows):
     ws = wb.create_sheet("Master")
-    ws.append(["Episode ID", "Task ID", "Task", "Model", "Class", "Difficulty",
-               "Resolved", "Pass", "Turns", "Wall clock", "Wall (s)", "Cost (USD)",
-               "Patch bytes", "F2P", "P2P", "Timestamp UTC"])
+    ws.append(["Episode ID", "Task", "Dataset", "Harness", "Model", "Attempt",
+               "Wall Clock Time", "Cost (USD)", "GPU (reasoning) time",
+               "CPU (tool exec) time", "Resolved", "Difficulty", "Turns"])
     for r in rows:
         ws.append([
-            r["episode_id"], r["task_id"], r["task_name"], short(r["model"]),
-            r["class"], r["difficulty"], r["resolved"],
-            f"{r['pass_n']}/{r['task_attempts_total']}",
-            num(r["turns"], int), hms(r["wall_seconds"]), num(r["wall_seconds"], int),
-            num(r["cost_usd"]), num(r["patch_bytes"], int), r["f2p"], r["p2p"],
-            r["timestamp_utc"],
+            r["episode_id"], r["task_id"], r["dataset"], r["harness"],
+            short(r["model"]),
+            f"{r.get('model_attempt_n', 1)}/{r.get('model_attempts_total', 1)}",
+            # Agent span, not run_record.wall_seconds: a bash tool that leaves a
+            # background process holding stdout keeps the shell waiting long
+            # after the agent finished, and that is not work.
+            hms(r.get("agent_span_s")),
+            num(r["cost_usd"]),
+            active_share(r.get("model_time_s"), r.get("tool_time_s")),
+            active_share(r.get("tool_time_s"), r.get("model_time_s")),
+            r["resolved"], r["difficulty"], num(r["turns"], int),
         ])
-    for row in ws.iter_rows(min_row=2, min_col=12, max_col=12):
+    for row in ws.iter_rows(min_row=2, min_col=8, max_col=8):
         for cell in row:
             cell.number_format = '"$"#,##0.0000'
     style_sheet(ws)
@@ -153,58 +188,75 @@ def _comparison_rows(rows, models):
 
 
 def sheet_comparison(wb, title, rows, models):
+    """One row per shared task, every model's numbers side by side.
+
+    CPVT is cost-per-verified-task: the episode's cost when it resolved, blank
+    when it did not. A failed episode still costs money but yields no verified
+    task, so averaging its spend in would understate what each success costs.
+    The TOTAL row divides all spend by the number verified -- the honest
+    aggregate.
+
+    GPU and tool percentages are shares of GPU+CPU, overhead excluded, so they
+    sum to 100 and describe how working time was split.
+    """
     shared = _comparison_rows(rows, models)
     if not shared:
         return None
     ws = wb.create_sheet(title[:31])
 
-    top = ["", "", ""]
-    sub = ["Task ID", "Task", "Difficulty"]
-    for m in models:
-        top += [m, "", "", ""]
-        sub += ["Resolved", "Turns", "Wall clock", "Cost (USD)"]
-    ws.append(top)
-    ws.append(sub)
-    for i, _ in enumerate(models):
-        c = 4 + i * 4
-        ws.merge_cells(start_row=1, start_column=c, end_row=1, end_column=c + 3)
+    names = [short(m) for m in models]
+    header = ["Episode ID"]
+    for label in ("Wall Clock", "CPVT", "Turns", "GPU time", "Tool exec"):
+        header += [f"{n} {label}" for n in names]
+    header += ["Dataset", "Difficulty"] + [f"{n} Resolved" for n in names]
+    ws.append(header)
 
     order = {"easy": 0, "medium": 1, "hard": 2, "unrated": 3}
     for task in sorted(shared, key=lambda t: (
             order.get(list(shared[t].values())[0]["difficulty"], 9), t)):
         v = shared[task]
-        first = list(v.values())[0]
-        line = [task, first["task_name"], first["difficulty"]]
-        for m in models:
-            r = v[m]
-            line += [r["resolved"], num(r["turns"], int),
-                     hms(r["wall_seconds"]), num(r["cost_usd"])]
+        rs = [v[m] for m in models]
+        line = [task]
+        line += [hms(r.get("agent_span_s")) for r in rs]
+        line += [num(r["cost_usd"]) if r["resolved"] == "yes" else None for r in rs]
+        line += [num(r["turns"], int) for r in rs]
+        line += [active_share(r.get("model_time_s"), r.get("tool_time_s")) for r in rs]
+        line += [active_share(r.get("tool_time_s"), r.get("model_time_s")) for r in rs]
+        first = rs[0]
+        line += [first["dataset"], first["difficulty"]] + [r["resolved"] for r in rs]
         ws.append(line)
 
-    # Totals: resolve rate over scored rows only, so ERROR / unverified never
-    # count as failures.
-    totals = ["TOTAL", f"{len(shared)} shared tasks", ""]
-    for m in models:
-        sub_rows = [v[m] for v in shared.values()]
-        scored = [r for r in sub_rows if r["resolved"] in ("yes", "no")]
-        won = sum(1 for r in scored if r["resolved"] == "yes")
-        totals += [
-            f"{won}/{len(scored)}",
-            sum(num(r["turns"], int) or 0 for r in sub_rows),
-            hms(sum(num(r["wall_seconds"], int) or 0 for r in sub_rows)),
-            sum(num(r["cost_usd"]) or 0 for r in sub_rows),
-        ]
-    ws.append(totals)
+    def agg(model_key):
+        sub = [v[model_key] for v in shared.values()]
+        won = [r for r in sub if r["resolved"] == "yes"]
+        spend = sum(num(r["cost_usd"]) or 0 for r in sub)
+        scored = [r for r in sub if r["resolved"] in ("yes", "no")]
+        return dict(
+            wall=sum(num(r.get("agent_span_s")) or 0 for r in sub),
+            cpvt=(spend / len(won)) if won else None,
+            turns=sum(num(r["turns"], int) or 0 for r in sub),
+            gpu=sum(num(r.get("model_time_s")) or 0 for r in sub),
+            cpu=sum(num(r.get("tool_time_s")) or 0 for r in sub),
+            res=f"{len(won)}/{len(scored)}")
+    totals = [agg(m) for m in models]
+    row = ["TOTAL"]
+    row += [hms(t["wall"]) for t in totals]
+    row += [t["cpvt"] for t in totals]
+    row += [t["turns"] for t in totals]
+    row += [active_share(t["gpu"], t["cpu"]) for t in totals]
+    row += [active_share(t["cpu"], t["gpu"]) for t in totals]
+    row += [f"{len(shared)} tasks", ""] + [t["res"] for t in totals]
+    ws.append(row)
 
     from openpyxl.styles import Font
     for cell in ws[ws.max_row]:
         cell.font = Font(bold=True)
-    for i, _ in enumerate(models):
-        col = 7 + i * 4
-        for row in ws.iter_rows(min_row=3, min_col=col, max_col=col):
-            for cell in row:
+    cpvt_start = 2 + len(models)
+    for col in range(cpvt_start, cpvt_start + len(models)):
+        for r in ws.iter_rows(min_row=2, min_col=col, max_col=col):
+            for cell in r:
                 cell.number_format = '"$"#,##0.0000'
-    style_sheet(ws, header_rows=2)
+    style_sheet(ws, header_rows=1)
     return ws
 
 

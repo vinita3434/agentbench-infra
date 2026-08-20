@@ -52,15 +52,6 @@ for task in $ids; do
   grep -q "^${task}	" "$REPORT" && { echo "[validate] $task already checked"; continue; }
 
   # Skip repos with non-pytest ids before spending a pull.
-  if ! python3 -c "
-import json, sys
-d = json.load(open('$ROOT/tasks/swebench_lite/data/$task.json'))
-ids = json.loads(d['FAIL_TO_PASS']) + json.loads(d['PASS_TO_PASS'])
-sys.exit(0 if all('::' in t for t in ids) else 1)"; then
-    printf '%s\t-\t-\tSKIP\tnon-pytest test ids (django/sympy runner)\n' "$task" >> "$REPORT"
-    echo "[validate] $task SKIP (non-pytest ids)"
-    continue
-  fi
   n=$((n + 1))
 
   echo; echo "=== [validate] $task ==============================="
