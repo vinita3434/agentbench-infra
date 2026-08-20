@@ -72,7 +72,11 @@ for task in $TASKS; do
   "$VERIFY" --task "$task" --model "$MODEL" || \
     echo "[sweep] verify returned non-zero for $task, continuing" >&2
   ran=$((ran + 1))
-  "$HERE/docker_gc.sh"
+  # Aggressive by default: drop the eval image as soon as its task is scored.
+  # Keeping them accumulated 20GB of images for two tasks that never ran, and a
+  # full disk is what stops Docker starting at all. A re-pull only costs time,
+  # and only if the same task is verified twice.
+  "$HERE/docker_gc.sh" --aggressive
 done
 
 echo; echo "[sweep] ran $ran, skipped $skipped (already verified)"

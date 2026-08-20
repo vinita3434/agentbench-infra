@@ -46,6 +46,8 @@ docker builder prune -f >/dev/null 2>&1
 if [[ "$AGGRESSIVE" -eq 1 ]]; then
   # Eval images are re-pullable from the registry; results are on the host and
   # are never touched by any of this.
+  # Only eval images -- never agent-serving-bench:test, which the next task
+  # would immediately have to rebuild from scratch.
   imgs=$(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
          | grep -E 'polybench|sweb\.eval' || true)
   if [[ -n "$imgs" ]]; then
